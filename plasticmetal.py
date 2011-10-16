@@ -20,9 +20,9 @@ class PowerChord(object):
 
     def _play_note(self, note):
         self.processes.append(subprocess.Popen(shlex.split('play -n synth 10 pluck %{0} overdrive 25 100'.format(note)),
-                              stdin=open('/dev/null', 'w'),
-                              stdout=open('/dev/null', 'w'),
-                              stderr=open('/dev/null', 'w')))
+                                               stdin=open('/dev/null'),
+                                               stdout=open('/dev/null', 'w'),
+                                               stderr=open('/dev/null', 'w')))
 
     def play(self):
         self._play_note(self.root_note)

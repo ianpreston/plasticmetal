@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # Plastic Metal
 # (c) 2011 Ian Preston
-# $ sudo xboxdrv --guitar --ui-buttonmap green=JS_0,red=JS_1,yellow=JS_2,blue=JS_3,orange=JS_4,du=JS_5,dd=JS_5 --ui-axismap X2=JS_6:0:-1 -l 6
-# $ ./plasticmetal.py
 import pygame
 import subprocess
 import shlex
@@ -10,7 +8,7 @@ import shlex
 # Guitar low E is 29 half steps below middle A
 GTR_E = -29
 
-GREEN, RED, YELLOW, BLUE, ORANGE, STRUM, WHAMMY = 0, 1, 2, 3, 4, 5, 6
+GREEN, RED, YELLOW, BLUE, ORANGE, STRUM, WHAMMY = 0, 1, 3, 2, 4, -1, -2
 
 class PowerChord(object):
     def __init__(self, root_note, play_only_root=False):
@@ -80,6 +78,14 @@ class PlasticMetal(object):
                     self.keystates[event.button] = True
                 elif event.type == pygame.JOYBUTTONUP:
                     self.keystates[event.button] = False
+                elif event.type == pygame.JOYHATMOTION and event.hat == 0:
+                    # Map strum bar motion to a keystate
+                    if event.value[1] == 0: self.keystates[STRUM] = False
+                    else                  : self.keystates[STRUM] = True
+                elif event.type == pygame.JOYAXISMOTION and event.axis == 3:
+                    # Map whammy bar to a keystate (more than half down = pressed)
+                    if event.value >= 0: self.keystates[WHAMMY] = True
+                    else               : self.keystates[WHAMMY] = False
                 else:
                     pass
 

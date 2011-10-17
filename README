@@ -14,23 +14,19 @@ Installation
 Plastic Metal requires:
     * Sox ( http://sox.sourceforge.net/ )
     * Pygame ( http://pygame.org/news.html )
-    * Xboxdrv ( http://pingus.seul.org/~grumbel/xboxdrv/ or https://github.com/Grumbel/xboxdrv )
 
 You should be able to install Sox and Pygame with your linux distro's
 package manager. On debian and ubuntu, you can install both with:
 
     $ sudo apt-get install sox python-pygame
 
-See xboxdrv's README file for it's installation instructions.
-
 
 ---------------------------------------
 Running
 ---------------------------------------
 
-Plug in your guitar and run these two commands:
+Plug in your guitar and start the script:
 
-    $ sudo xboxdrv --guitar --ui-buttonmap green=JS_0,red=JS_1,yellow=JS_2,blue=JS_3,orange=JS_4,du=JS_5,dd=JS_5 --ui-axismap X2=JS_6:0:-1 -l 6
     $ ./plasticmetal.py
 
 

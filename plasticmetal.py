@@ -8,7 +8,9 @@ import shlex
 # Guitar low E is 29 half steps below middle A
 GTR_E = -29
 
-GREEN, RED, YELLOW, BLUE, ORANGE, STRUM, WHAMMY = 0, 1, 3, 2, 4, -1, -2
+# Mapping of joystick input codes to color buttons
+BTN_GREEN, BTN_RED, BTN_YELLOW, BTN_BLUE, BTN_ORANGE = 0, 1, 3, 2, 4
+
 
 class PowerChord(object):
     def __init__(self, root_note, play_only_root=False):
@@ -37,12 +39,17 @@ class PlasticMetal(object):
         self.guitar = pygame.joystick.Joystick(0)
         self.guitar.init()
 
-        self.last_fret_state = (False, False, False, False, False)
-        self.space_released = False
-        self.current_chord = PowerChord(GTR_E)
-        self.hammeron_timer = 0
+        # The current state of which frets are pressed down
+        self.fret_state      = [False, False, False, False, False]
 
-        self.keystates = {GREEN: False, RED: False, YELLOW: False, BLUE: False, ORANGE: False, STRUM: False, WHAMMY: False}
+        # The state of the frets last frame
+        self.last_fret_state = [False, False, False, False, False]
+
+        # Is the whammy being pressed down?
+        self.is_whammy_down = False
+
+        # The PowerChord that is currently playing
+        self.current_chord = PowerChord(GTR_E)
 
     def get_root_note_from_states(self, state):
         """
@@ -72,46 +79,41 @@ class PlasticMetal(object):
 
     def run(self):
         while True:
-            # Capture pygame joystick events and set up the keystates
             for event in pygame.event.get():
                 if event.type == pygame.JOYBUTTONDOWN:
-                    self.keystates[event.button] = True
+                    if event.button == BTN_GREEN   : self.fret_state[0] = True
+                    elif event.button == BTN_RED   : self.fret_state[1] = True
+                    elif event.button == BTN_YELLOW: self.fret_state[2] = True
+                    elif event.button == BTN_BLUE  : self.fret_state[3] = True
+                    elif event.button == BTN_ORANGE: self.fret_state[4] = True
+
                 elif event.type == pygame.JOYBUTTONUP:
-                    self.keystates[event.button] = False
+                    if event.button == BTN_GREEN   : self.fret_state[0] = False
+                    elif event.button == BTN_RED   : self.fret_state[1] = False
+                    elif event.button == BTN_YELLOW: self.fret_state[2] = False
+                    elif event.button == BTN_BLUE  : self.fret_state[3] = False
+                    elif event.button == BTN_ORANGE: self.fret_state[4] = False
+
                 elif event.type == pygame.JOYHATMOTION and event.hat == 0:
-                    # Map strum bar motion to a keystate
-                    if event.value[1] == 0: self.keystates[STRUM] = False
-                    else                  : self.keystates[STRUM] = True
+                    # When the strum bar is hit, stop the current chord and start
+                    # playing the chord that is pressed down. If the whammy is
+                    # being pressed down, play just the root note.
+                    if event.value[1] != 0:
+                        self.current_chord.stop()
+                        self.current_chord = PowerChord(self.get_root_note_from_states(self.fret_state), self.is_whammy_down)
+                        self.current_chord.play()
+
                 elif event.type == pygame.JOYAXISMOTION and event.axis == 3:
                     # Map whammy bar to a keystate (more than half down = pressed)
-                    if event.value >= 0: self.keystates[WHAMMY] = True
-                    else               : self.keystates[WHAMMY] = False
-                else:
-                    pass
-
-            fret_state = (self.keystates[GREEN],
-                          self.keystates[RED],
-                          self.keystates[YELLOW],
-                          self.keystates[BLUE],
-                          self.keystates[ORANGE])
+                    if event.value >= 0: self.is_whammy_down = True
+                    else               : self.is_whammy_down = False
 
             # If the state of the frets has changed since last frame, stop the current
             # chord.
-            if fret_state != self.last_fret_state:
+            if self.fret_state != self.last_fret_state:
                 self.current_chord.stop()
 
-            # When the strum bar is hit, play the chord that is pressed down.
-            # If the whammy is pressed more than half down, play a single note rather than a chord.
-            if self.keystates[STRUM]:
-                if self.space_released == True:
-                    self.space_released = False
-                    self.current_chord.stop()
-                    self.current_chord = PowerChord(self.get_root_note_from_states(fret_state), self.keystates[WHAMMY])
-                    self.current_chord.play()
-            else:
-                self.space_released = True
-
-            self.last_fret_state = fret_state
+            self.last_fret_state = self.fret_state[:]
 
 
 if __name__ == '__main__':

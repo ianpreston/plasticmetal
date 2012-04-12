@@ -22,44 +22,55 @@ package manager. On debian and ubuntu, you can install both with:
 
 
 ---------------------------------------
-Running
----------------------------------------
-
-Plug in your guitar and start the script:
-
-    $ ./plasticmetal.py
-
-
----------------------------------------
 Usage
 ---------------------------------------
 
-By default, the script maps button presses to power chords. Strum without
-holding any frets to play an open E power chord. Hold down the green button
-to play a power chord one half step above E.
+Plug in your guitar and start the script
 
-Here's a list of all the power chords you can play currently:
+    $ ./plasticmetal.py
 
-GRYBO
------ Open E power chord
-o---- Power chord on the first fret of the E string
--o--- Power chord on the second fret of the E string
---o-- 3
----o- 4
-----o 5
-oo--- 6
--oo-- 7
---oo- 8
----oo 9
-o-o-- 10
--o-o- 11
---o-o 12
-ooo-- 13
--ooo- 14
---ooo 15
+Plastic Metal will synthesize power chords as you strum your guitar controller. Each
+combination of frets you hold down whilst strumming will result in a different
+power chord being played.
 
-Holding the whammy bar all the way down whilst playing will play just root notes
-rather than power chords.
+Additionally, you can hold down the whammy bar to play only the root note of the
+power chord.
+
+---------------------------------------
+Map files
+---------------------------------------
+
+Plastic Metal determines which power chord should be played for each possible chord
+played on the guitar controller by using a map file.
+
+Each map file is in windows INI format. All chords are specified in a format similar
+to this:
+
+    10100=3
+
+The left side of the '=' sign defines the frets that are held down to play
+this chord. In this example, the green and yellow frets are held.
+
+The right side defines which power chord should be played. In the example, the
+3rd fret of the E string will be the root note of the power chord.
+
+Thus, with this line in your map file, holding down the green and yellow buttons
+and strumming will result in Plastic Metal synthesizing a power chord on the 3rd
+fret of the E string.
+
+Here's another example:
+
+    00011=2
+
+In this example, when the blue and orange frets are held, a power chord will be
+played on the 2nd fret of the E string.
+
+You can define which map file Plastic Metal reads by using the --mapfile option,
+like so:
+
+    $ ./plasticmetal.py --mapfile=example.map
+
+Plastic Metal uses the map file `default.map` unless a different one is specified.
 
 
 ---------------------------------------

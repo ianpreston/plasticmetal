@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # Plastic Metal
-# (c) 2011 Ian Preston
+# (c) 2011-2012 Ian Preston
 import pygame
 import subprocess
 import shlex
+import ConfigParser
+import os.path
+import optparse # :(
 
 # Guitar low E is 29 half steps below middle A
 GTR_E = -29
@@ -35,9 +38,13 @@ class PowerChord(object):
 
 
 class PlasticMetal(object):
-    def __init__(self):
+    def __init__(self, chord_map_filename):
         self.guitar = pygame.joystick.Joystick(0)
         self.guitar.init()
+
+        # Parse the fretstate-to-powerchord map file
+        self.chord_map = ConfigParser.RawConfigParser()
+        self.chord_map.read(chord_map_filename)
 
         # The current state of which frets are pressed down
         self.fret_state      = [False, False, False, False, False]
@@ -51,31 +58,30 @@ class PlasticMetal(object):
         # The PowerChord that is currently playing
         self.current_chord = PowerChord(GTR_E)
 
-    def get_root_note_from_states(self, state):
+    def get_root_note_from_states(self):
         """
-        Takes a five-tuple of keystates for the green to orange buttons and returns a
-        root note that should be played.
+        Returns a root note that should be played determined by the frets that are
+        currently being held down. The integer returned is generally in the range
+        of 0-24 and corresponds to a fret of a certain string; i.e. 0 is open,
+        1 is first fret, and so on. Defaults to 0 if the chord being pressed is not
+        defined in the chord map file.
         """
-        if state[0] and state[1] and state[2]: return GTR_E+13
-        if state[1] and state[2] and state[3]: return GTR_E+14
-        if state[2] and state[3] and state[4]: return GTR_E+15
+        # Make a string representation of the currently-pressed frets in the same format as the
+        # keys in the map file. For example, if the green and red frets are held,
+        # chord_map_key would be "11000"
+        chord_map_key = ('1' if self.fret_state[0] else '0') + \
+                        ('1' if self.fret_state[1] else '0') + \
+                        ('1' if self.fret_state[2] else '0') + \
+                        ('1' if self.fret_state[3] else '0') + \
+                        ('1' if self.fret_state[4] else '0')
 
-        if state[0] and state[2]: return GTR_E+10
-        if state[1] and state[3]: return GTR_E+11
-        if state[2] and state[4]: return GTR_E+12
-
-        if state[0] and state[1]: return GTR_E+6
-        if state[1] and state[2]: return GTR_E+7
-        if state[2] and state[3]: return GTR_E+8
-        if state[3] and state[4]: return GTR_E+9
-
-        if state[0]: return GTR_E+1
-        if state[1]: return GTR_E+2
-        if state[2]: return GTR_E+3
-        if state[3]: return GTR_E+4
-        if state[4]: return GTR_E+5
-
-        if not (True in state): return GTR_E
+        # Search the map file for the key we just built, and return
+        # the root note the file sets
+        try:
+            root_note = self.chord_map.getint('PowerChords', chord_map_key)
+        except ConfigParser.NoOptionError:
+            root_note = 0
+        return root_note
 
     def run(self):
         while True:
@@ -100,7 +106,7 @@ class PlasticMetal(object):
                     # being pressed down, play just the root note.
                     if event.value[1] != 0:
                         self.current_chord.stop()
-                        self.current_chord = PowerChord(self.get_root_note_from_states(self.fret_state), self.is_whammy_down)
+                        self.current_chord = PowerChord(GTR_E + self.get_root_note_from_states(), self.is_whammy_down)
                         self.current_chord.play()
 
                 elif event.type == pygame.JOYAXISMOTION and event.axis == 3:
@@ -117,6 +123,12 @@ class PlasticMetal(object):
 
 
 if __name__ == '__main__':
+    parser = optparse.OptionParser()
+    parser.add_option('-m', '--mapfile', dest='mapfile', metavar='FILE', help='Specify the fretstate-to-powerchord mapping')
+
+    options, args = parser.parse_args()
+    chord_map_filename = options.mapfile or os.path.join(os.path.dirname(__file__), 'default.map')
+
     pygame.init()
     pygame.joystick.init()
-    PlasticMetal().run()
+    PlasticMetal(chord_map_filename).run()

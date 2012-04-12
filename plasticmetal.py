@@ -14,6 +14,9 @@ GTR_E = -29
 # Mapping of joystick input codes to color buttons
 BTN_GREEN, BTN_RED, BTN_YELLOW, BTN_BLUE, BTN_ORANGE = 0, 1, 3, 2, 4
 
+# Named constants for fretstates
+FS_GREEN, FS_RED, FS_YELLOW, FS_BLUE, FS_ORANGE = 0, 1, 2, 3, 4
+
 
 class PowerChord(object):
     def __init__(self, root_note, play_only_root=False):
@@ -69,11 +72,11 @@ class PlasticMetal(object):
         # Make a string representation of the currently-pressed frets in the same format as the
         # keys in the map file. For example, if the green and red frets are held,
         # chord_map_key would be "11000"
-        chord_map_key = ('1' if self.fret_state[0] else '0') + \
-                        ('1' if self.fret_state[1] else '0') + \
-                        ('1' if self.fret_state[2] else '0') + \
-                        ('1' if self.fret_state[3] else '0') + \
-                        ('1' if self.fret_state[4] else '0')
+        chord_map_key = ('1' if self.fret_state[FS_GREEN] else '0') + \
+                        ('1' if self.fret_state[FS_RED] else '0') + \
+                        ('1' if self.fret_state[FS_YELLOW] else '0') + \
+                        ('1' if self.fret_state[FS_BLUE] else '0') + \
+                        ('1' if self.fret_state[FS_ORANGE] else '0')
 
         # Search the map file for the key we just built, and return
         # the root note the file sets
@@ -87,18 +90,18 @@ class PlasticMetal(object):
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.JOYBUTTONDOWN:
-                    if event.button == BTN_GREEN   : self.fret_state[0] = True
-                    elif event.button == BTN_RED   : self.fret_state[1] = True
-                    elif event.button == BTN_YELLOW: self.fret_state[2] = True
-                    elif event.button == BTN_BLUE  : self.fret_state[3] = True
-                    elif event.button == BTN_ORANGE: self.fret_state[4] = True
+                    if event.button == BTN_GREEN   : self.fret_state[FS_GREEN] = True
+                    elif event.button == BTN_RED   : self.fret_state[FS_RED] = True
+                    elif event.button == BTN_YELLOW: self.fret_state[FS_YELLOW] = True
+                    elif event.button == BTN_BLUE  : self.fret_state[FS_BLUE] = True
+                    elif event.button == BTN_ORANGE: self.fret_state[FS_ORANGE] = True
 
                 elif event.type == pygame.JOYBUTTONUP:
-                    if event.button == BTN_GREEN   : self.fret_state[0] = False
-                    elif event.button == BTN_RED   : self.fret_state[1] = False
-                    elif event.button == BTN_YELLOW: self.fret_state[2] = False
-                    elif event.button == BTN_BLUE  : self.fret_state[3] = False
-                    elif event.button == BTN_ORANGE: self.fret_state[4] = False
+                    if event.button == BTN_GREEN   : self.fret_state[FS_GREEN] = False
+                    elif event.button == BTN_RED   : self.fret_state[FS_RED] = False
+                    elif event.button == BTN_YELLOW: self.fret_state[FS_YELLOW] = False
+                    elif event.button == BTN_BLUE  : self.fret_state[FS_BLUE] = False
+                    elif event.button == BTN_ORANGE: self.fret_state[FS_ORANGE] = False
 
                 elif event.type == pygame.JOYHATMOTION and event.hat == 0:
                     # When the strum bar is hit, stop the current chord and start

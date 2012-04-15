@@ -1,19 +1,16 @@
---------------------------------------------------------------------------------
-Plastic Metal
---------------------------------------------------------------------------------
+# Plastic Metal
 
 Be a real life Guitar Hero!
 
 Plug in a guitar hero controller and run the script. Plastic Metal will turn
 your button presses into synthesized power chords using sox.
 
----------------------------------------
-Installation
----------------------------------------
+## Installation
 
 Plastic Metal requires:
-    * Sox ( http://sox.sourceforge.net/ )
-    * Pygame ( http://pygame.org/news.html )
+
+  * Sox ( http://sox.sourceforge.net/ )
+  * Pygame ( http://pygame.org/news.html )
 
 You should be able to install Sox and Pygame with your linux distro's
 package manager. On debian and ubuntu, you can install both with:
@@ -21,9 +18,7 @@ package manager. On debian and ubuntu, you can install both with:
     $ sudo apt-get install sox python-pygame
 
 
----------------------------------------
-Usage
----------------------------------------
+## Usage
 
 Plug in your guitar and start the script
 
@@ -36,9 +31,8 @@ power chord being played.
 Additionally, you can hold down the whammy bar to play only the root note of the
 power chord.
 
----------------------------------------
-Map files
----------------------------------------
+
+## Map files
 
 Plastic Metal determines which power chord should be played for each possible chord
 played on the guitar controller by using a map file.
@@ -73,8 +67,6 @@ like so:
 Plastic Metal uses the map file `default.map` unless a different one is specified.
 
 
----------------------------------------
-License
----------------------------------------
+## License
 
 Plastic Metal is available under the MIT License.

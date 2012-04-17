@@ -3,7 +3,7 @@
 Be a real life Guitar Hero!
 
 Plug in a guitar hero controller and run the script. Plastic Metal will turn
-your button presses into synthesized power chords using sox.
+your button presses into synthesized guitar chords using sox.
 
 ## Installation
 
@@ -24,40 +24,38 @@ Plug in your guitar and start the script
 
     $ ./plasticmetal.py
 
-Plastic Metal will synthesize power chords as you strum your guitar controller. Each
+Plastic Metal will synthesize guitar chords as you strum your guitar controller. Each
 combination of frets you hold down whilst strumming will result in a different
-power chord being played.
-
-Additionally, you can hold down the whammy bar to play only the root note of the
-power chord.
+chord being played.
 
 
 ## Map files
 
-Plastic Metal determines which power chord should be played for each possible chord
-played on the guitar controller by using a map file.
+Plastic Metal will play a different chord depending on which frets you hold down
+on the guitar controller. To determine which chord (or note) should be played for
+each combination of frets held, it uses a map file.
 
-Each map file is in windows INI format. All chords are specified in a format similar
-to this:
+Map files are in windows INI format, with all options in the `[Chords]` section.
 
-    10100=3
+Each chord definition takes a form similar to this:
 
-The left side of the '=' sign defines the frets that are held down to play
-this chord. In this example, the green and yellow frets are held.
+    10100=E0,A2,D2
 
-The right side defines which power chord should be played. In the example, the
-3rd fret of the E string will be the root note of the power chord.
+The left side of the `=` sign specifies a fret state, or which frets must be held
+down for this rule to apply. The right side of the `=` sign specifies a chord
+specification (a comma-seperated list of note specifications), the notes that
+should be played when this chord is strummed on the guitar controller.
 
-Thus, with this line in your map file, holding down the green and yellow buttons
-and strumming will result in Plastic Metal synthesizing a power chord on the 3rd
-fret of the E string.
+The left side of the `=` sign specifies a fret state. There are five characters
+that represent the five frets. A `1` indicates a held fret and a `0` indicates
+a not held fret. In the above example, this definition defines what will be played
+when the green and yellow frets are held.
 
-Here's another example:
+The right side of the `=` sign specifies which notes should be played when this
+chord is strummed. In the above example, three notes will be played: the open E
+string, the 2nd fret on the A string, and the 2nd fret on the D string.
 
-    00011=2
-
-In this example, when the blue and orange frets are held, a power chord will be
-played on the 2nd fret of the E string.
+There may be any number of chord definitions in a file.
 
 You can define which map file Plastic Metal reads by using the --mapfile option,
 like so:

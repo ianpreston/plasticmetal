@@ -11,17 +11,27 @@ import optparse # :(
 # Guitar low E is 29 half steps below middle A
 GTR_E = -29
 
+STRINGS = {
+    'E': GTR_E,
+    'A': GTR_E+5,
+    'D': GTR_E+5+5,
+    'G': GTR_E+5+5+5,
+    'B': GTR_E+5+5+5+4,
+    'e': GTR_E+5+5+5+4+5
+}
+
 # Mapping of joystick input codes to color buttons
 BTN_GREEN, BTN_RED, BTN_YELLOW, BTN_BLUE, BTN_ORANGE = 0, 1, 3, 2, 4
 
 # Named constants for fretstates
 FS_GREEN, FS_RED, FS_YELLOW, FS_BLUE, FS_ORANGE = 0, 1, 2, 3, 4
 
+class ImproperlyFormattedChordSpecError(Exception): pass
 
-class PowerChord(object):
-    def __init__(self, root_note, play_only_root=False):
-        self.root_note = root_note
-        self.play_only_root = play_only_root
+
+class SynthChord(object):
+    def __init__(self, notes):
+        self.notes = notes
         self.processes = []
 
     def _play_note(self, note):
@@ -31,11 +41,8 @@ class PowerChord(object):
                                                stderr=open('/dev/null', 'w')))
 
     def play(self):
-        self._play_note(self.root_note)
-        if not self.play_only_root:
-            self._play_note(self.root_note+7)
-            self._play_note(self.root_note+12)
-
+        for n in self.notes:
+            self._play_note(n)
     def stop(self):
         for proc in self.processes: proc.kill()
 
@@ -59,16 +66,15 @@ class PlasticMetal(object):
         self.is_whammy_down = False
 
         # The PowerChord that is currently playing
-        self.current_chord = PowerChord(GTR_E)
+        self.current_chord = SynthChord([])
 
-    def get_root_note_from_states(self):
+    def get_notes_from_states(self):
         """
-        Returns a root note that should be played determined by the frets that are
-        currently being held down. The integer returned is generally in the range
-        of 0-24 and corresponds to a fret of a certain string; i.e. 0 is open,
-        1 is first fret, and so on. Defaults to 0 if the chord being pressed is not
-        defined in the chord map file.
+        Takes the current fretstate and returns a list of notes that should
+        be played, using the map file. The returned notes are integers relative
+        to middle A.
         """
+
         # Make a string representation of the currently-pressed frets in the same format as the
         # keys in the map file. For example, if the green and red frets are held,
         # chord_map_key would be "11000"
@@ -77,14 +83,36 @@ class PlasticMetal(object):
                         ('1' if self.fret_state[FS_YELLOW] else '0') + \
                         ('1' if self.fret_state[FS_BLUE] else '0') + \
                         ('1' if self.fret_state[FS_ORANGE] else '0')
-
-        # Search the map file for the key we just built, and return
-        # the root note the file sets
         try:
-            root_note = self.chord_map.getint('PowerChords', chord_map_key)
+            notes = []
+
+            # Get the list of note specs from the file using the key we generated
+            # above
+            chord_map_note_specs = self.chord_map.get('Chords', chord_map_key).split(',')
+            for spec in chord_map_note_specs:
+                try:
+                    # Each note to play from the map file is in the format <string><fret>. I.e.
+                    # to play the 3rd fret on the e string, the spec would be e3
+                    spec_string = spec[0]
+                    spec_fret = int(spec[1:])
+                    note = STRINGS[spec_string] + spec_fret
+                    notes.append(note)
+                except KeyError:
+                    # The first character of the note specification was not in
+                    # STRINGS, so it's not a valid string.
+                    raise ImproperlyFormattedChordSpecError('Not a valid guitar string: {0}'.format(spec_string))
+                except ValueError:
+                    # The next characters of the note specification could not
+                    # be converted to an int, so they are not a fret number
+                    raise ImproperlyFormattedChordSpecError('Not a valid fret: {0}'.format(spec_fret))
+                except IndexError:
+                    # Either [0] or [1:] was out of range, so the note spec is not
+                    # valid or doesn't exist
+                    raise ImproperlyFormattedChordSpecError('Invalid format: '.format(spec))
         except ConfigParser.NoOptionError:
-            root_note = 0
-        return root_note
+            notes = []
+
+        return notes
 
     def run(self):
         while True:
@@ -105,12 +133,14 @@ class PlasticMetal(object):
 
                 elif event.type == pygame.JOYHATMOTION and event.hat == 0:
                     # When the strum bar is hit, stop the current chord and start
-                    # playing the chord that is pressed down. If the whammy is
-                    # being pressed down, play just the root note.
+                    # playing the chord that is pressed down.
                     if event.value[1] != 0:
                         self.current_chord.stop()
-                        self.current_chord = PowerChord(GTR_E + self.get_root_note_from_states(), self.is_whammy_down)
-                        self.current_chord.play()
+                        try:
+                            self.current_chord = SynthChord(self.get_notes_from_states())
+                            self.current_chord.play()
+                        except ImproperlyFormattedChordSpecError:
+                            pass
 
                 elif event.type == pygame.JOYAXISMOTION and event.axis == 3:
                     # Map whammy bar to a keystate (more than half down = pressed)
@@ -127,7 +157,7 @@ class PlasticMetal(object):
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
-    parser.add_option('-m', '--mapfile', dest='mapfile', metavar='FILE', help='Specify the fretstate-to-powerchord mapping')
+    parser.add_option('-m', '--mapfile', dest='mapfile', metavar='FILE', help='Specify the map file')
 
     options, args = parser.parse_args()
     chord_map_filename = options.mapfile or os.path.join(os.path.dirname(__file__), 'default.map')

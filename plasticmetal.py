@@ -21,7 +21,7 @@ STRINGS = {
 }
 
 # Mapping of joystick input codes to color buttons
-BTN_GREEN, BTN_RED, BTN_YELLOW, BTN_BLUE, BTN_ORANGE = 0, 1, 3, 2, 4
+BTN_GREEN, BTN_RED, BTN_YELLOW, BTN_BLUE, BTN_ORANGE, BTN_XBOX = 0, 1, 3, 2, 4, 7
 
 # Named constants for fretstates
 FS_GREEN, FS_RED, FS_YELLOW, FS_BLUE, FS_ORANGE = 0, 1, 2, 3, 4
@@ -30,12 +30,15 @@ class ImproperlyFormattedChordSpecError(Exception): pass
 
 
 class SynthChord(object):
-    def __init__(self, notes):
+    def __init__(self, notes, distort=True):
         self.notes = notes
         self.processes = []
+        self.distort = distort
 
     def _play_note(self, note):
-        self.processes.append(subprocess.Popen(shlex.split('play -n synth 10 pluck %{0} overdrive 25 100'.format(note)),
+        distortion = ('overdrive 25 100' if self.distort else '')
+        cmd = shlex.split('play -n synth 10 pluck %{0} {1}'.format(note, distortion))
+        self.processes.append(subprocess.Popen(cmd,
                                                stdin=open('/dev/null'),
                                                stdout=open('/dev/null', 'w'),
                                                stderr=open('/dev/null', 'w')))
@@ -64,6 +67,9 @@ class PlasticMetal(object):
 
         # Is the whammy being pressed down?
         self.is_whammy_down = False
+
+        # Is distortion enabled? (toggle with Xbox button)
+        self.is_distortion_enabled = True
 
         # The PowerChord that is currently playing
         self.current_chord = SynthChord([])
@@ -130,6 +136,7 @@ class PlasticMetal(object):
                     elif event.button == BTN_YELLOW: self.fret_state[FS_YELLOW] = False
                     elif event.button == BTN_BLUE  : self.fret_state[FS_BLUE] = False
                     elif event.button == BTN_ORANGE: self.fret_state[FS_ORANGE] = False
+                    elif event.button == BTN_XBOX  : self.is_distortion_enabled = not self.is_distortion_enabled
 
                 elif event.type == pygame.JOYHATMOTION and event.hat == 0:
                     # When the strum bar is hit, stop the current chord and start
@@ -137,7 +144,7 @@ class PlasticMetal(object):
                     if event.value[1] != 0:
                         self.current_chord.stop()
                         try:
-                            self.current_chord = SynthChord(self.get_notes_from_states())
+                            self.current_chord = SynthChord(self.get_notes_from_states(), self.is_distortion_enabled)
                             self.current_chord.play()
                         except ImproperlyFormattedChordSpecError:
                             pass
